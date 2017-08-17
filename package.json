@@ -4,7 +4,8 @@
   "description": "deployment manager for konstructor",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "npm run lint",
+    "lint": "eslint *.js"
   },
   "repository": {
     "type": "git",
@@ -18,5 +19,10 @@
   "bugs": {
     "url": "https://github.com/konstructorjs/kolony/issues"
   },
-  "homepage": "https://github.com/konstructorjs/kolony#readme"
+  "homepage": "https://github.com/konstructorjs/kolony#readme",
+  "devDependencies": {
+    "eslint": "^4.4.1",
+    "eslint-config-airbnb-base": "^11.3.1",
+    "eslint-plugin-import": "^2.7.0"
+  }
 }
