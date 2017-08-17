@@ -1,0 +1,22 @@
+{
+  "name": "kolony",
+  "version": "0.0.0",
+  "description": "deployment manager for konstructor",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/konstructorjs/kolony.git"
+  },
+  "keywords": [
+    "konstructor"
+  ],
+  "author": "Manthan Mallikarjun",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/konstructorjs/kolony/issues"
+  },
+  "homepage": "https://github.com/konstructorjs/kolony#readme"
+}
