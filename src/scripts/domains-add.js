@@ -1,4 +1,3 @@
-const chalk = require('chalk');
 const kopy = require('kopy');
 const os = require('os');
 const path = require('path');
@@ -25,7 +24,7 @@ const add = async (args) => {
     kolonyData = require(kolonyFile);
     port = kolonyData[name].port;
   } catch (_) {
-    throw new Error(' could not find project. please push before you add a domain. ');
+    throw new Error('could not find project. please push before you add a domain');
   }
   await kopy(path.join(blueprintsDir, './sites-enabled'), sitesEnabledDir, {
     data: {
@@ -50,23 +49,9 @@ const add = async (args) => {
   execSync('nginx -s reload');
 };
 
-const domain = async (args) => {
-  switch (args.action) {
-    case 'add':
-      await add(args);
-      break;
-    default:
-      console.log(chalk.bgRed(chalk.black(' unknown action ')));
-      break;
-  }
-};
-
-module.exports.command = 'domain <action> <name> <domain>';
+module.exports.command = 'domains:add <name> <domain>';
 module.exports.desc = 'add a domain to an application';
 module.exports.builder = {
-  action: {
-    describe: '"add"',
-  },
   name: {
     describe: 'project name',
   },
@@ -76,7 +61,8 @@ module.exports.builder = {
 };
 
 module.exports.handler = (args) => {
-  domain(args).catch((err) => {
-    console.log(chalk.bgRed(chalk.black(err)));
+  add(args).catch((err) => {
+    console.log(` [ERR] ${err}`);
+    process.exit(1);
   });
 };

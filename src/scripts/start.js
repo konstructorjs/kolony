@@ -1,4 +1,3 @@
-const chalk = require('chalk');
 const os = require('os');
 const path = require('path');
 const bs58 = require('bs58');
@@ -39,7 +38,7 @@ const start = async (args) => {
   const kolonyFile = path.join(kolonyDir, './kolony.json');
 
   if (!fs.existsSync(projectsDir)) {
-    fs.mkdirSync(projectsDir);
+    throw new Error('unable to find kolony directory. please run kolony setup');
   }
 
   process.chdir(projectsDir);
@@ -167,7 +166,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   start(args).catch((err) => {
-    console.log(chalk.red(err));
+    console.log(` [ERR] ${err}`);
     process.exit(1);
   });
 };

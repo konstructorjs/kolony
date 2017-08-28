@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "bs58": "^4.0.1",
-    "chalk": "^2.1.0",
     "kopy": "^8.1.0",
     "portscanner": "^2.1.1",
     "yargs": "^8.0.2"

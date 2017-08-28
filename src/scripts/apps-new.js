@@ -1,4 +1,3 @@
-const chalk = require('chalk');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
@@ -17,13 +16,13 @@ const create = async (args) => {
   }
 
   if (/[^a-z]/gi.test(name)) {
-    throw new Error('name must only contain lowercase letters.');
+    throw new Error('name must only contain lowercase letters');
   }
 
   if (!fs.existsSync(projectDir)) {
     fs.mkdirSync(projectDir);
   } else {
-    throw new Error('project directory already exists.');
+    throw new Error('project directory already exists');
   }
 
   process.chdir(projectDir);
@@ -44,7 +43,7 @@ const create = async (args) => {
   });
 };
 
-module.exports.command = 'new <name>';
+module.exports.command = 'apps:new <name>';
 module.exports.desc = 'create a new server block';
 module.exports.builder = {
   name: {
@@ -53,6 +52,7 @@ module.exports.builder = {
 };
 module.exports.handler = (args) => {
   create(args).catch((err) => {
-    console.log(chalk.red(err));
+    console.log(` [ERR] ${err}`);
+    process.exit(1);
   });
 };
