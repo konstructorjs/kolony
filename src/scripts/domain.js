@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const kopy = require('kopy');
 const os = require('os');
 const path = require('path');
+const { execSync } = require('child_process');
 const fs = require('fs');
 
 const nginxPaths = [
@@ -45,6 +46,8 @@ const add = async (args) => {
   });
 
   fs.symlinkSync(path.join(sitesEnabledDir, domain), path.join(nginxPath, domain));
+
+  execSync('nginx -s reload');
 };
 
 const domain = async (args) => {
