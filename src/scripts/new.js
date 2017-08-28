@@ -16,7 +16,6 @@ const create = async (args) => {
     fs.mkdirSync(kolonyDir);
   }
 
-
   if (/[^a-z]/gi.test(name)) {
     throw new Error('name must only contain lowercase letters.');
   }

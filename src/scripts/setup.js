@@ -1,5 +1,8 @@
 const chalk = require('chalk');
 const { execSync } = require('child_process');
+const os = require('os');
+const path = require('path');
+const fs = require('fs');
 
 const setup = async () => {
   console.log(chalk.bgBlue(chalk.black(' checking to see if git is installed. ')));
@@ -24,6 +27,18 @@ const setup = async () => {
     console.log(chalk.bgGreen(chalk.black('\t pm2 is installed. ')));
   } catch (_) {
     console.log(chalk.bgRed(chalk.black('\t pm2 is not installed. ')));
+  }
+
+  const homeDir = os.homedir();
+  const kolonyDir = path.join(homeDir, './.kolony');
+  const sitesEnabledDir = path.join(kolonyDir, 'sites-enabled');
+
+  if (!fs.existsSync(kolonyDir)) {
+    fs.mkdirSync(kolonyDir);
+  }
+
+  if (!fs.existsSync(sitesEnabledDir)) {
+    fs.mkdirSync(sitesEnabledDir);
   }
 };
 

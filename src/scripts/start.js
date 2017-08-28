@@ -5,6 +5,7 @@ const bs58 = require('bs58');
 const fs = require('fs');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
+const ports = require('../utils/ports');
 
 const run = (command, inputOptions) => {
   const options = inputOptions || {};
@@ -66,6 +67,24 @@ const start = async (args) => {
     kolonyData = {};
     oldID = undefined;
   }
+
+  let port;
+  if (kolonyData[name] && kolonyData[name].port) {
+    port = kolonyData[name].port;
+    logChild(`found existing port ${port}`);
+  } else {
+    logChild('could not find existing port');
+    let done = false;
+    while (!done) {
+      port = ports.randomPort();
+      const result = Object.keys(kolonyData).filter(obj => obj.port === port); // eslint-disable-line
+      if (ports.checkPort(port) && result.length === 0) {
+        done = true;
+      }
+    }
+    logChild(`generated new port ${port}`);
+  }
+
   if (oldID) {
     logChild(`found existing project id ${oldID}`);
   } else {
@@ -100,6 +119,7 @@ const start = async (args) => {
     run(`nvm exec ${nodeVersion} npm install -g npm@${npmVersion}`);
   }
 
+  process.env.PORT = port;
   process.env.NODE_ENV = 'production';
   process.env.NPM_CONFIG_LOGLEVEL = 'error';
   process.env.NPM_CONFIG_PRODUCTION = 'false';
@@ -113,8 +133,10 @@ const start = async (args) => {
 
   logBase('starting server');
   run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} npm -- start`);
+  logChild(`started server on port ${port}`);
 
   const data = {
+    port,
     id: newID,
   };
   kolonyData[name] = data;
@@ -124,8 +146,12 @@ const start = async (args) => {
 
   if (oldID) {
     logBase('deleting old project instance');
-    run(`pm2 stop ${name}-${oldID}`);
-    run(`pm2 delete ${name}-${oldID}`);
+    try {
+      run(`pm2 stop ${name}-${oldID}`);
+      run(`pm2 delete ${name}-${oldID}`);
+    } catch (_) {
+      logChild('there was a problem shutting down your older server. please do it manually');
+    }
   }
   logBase('DONE!');
   console.log('*/');
