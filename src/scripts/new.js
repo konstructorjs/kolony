@@ -32,7 +32,7 @@ const create = async (args) => {
     cwd: projectDir,
   });
 
-  execSync(`ln -s ${projectDir} ${homeDir}/${name}`);
+  fs.symlinkSync(projectDir, path.join(homeDir, name));
 
   await kopy(path.join(blueprintsDir, './post-receive'), path.join(projectDir, './hooks'), {
     data: {
