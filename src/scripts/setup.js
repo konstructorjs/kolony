@@ -39,11 +39,20 @@ const setup = async () => {
 
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
+  const projectsDir = path.join(kolonyDir, './projects');
   const sitesEnabledDir = path.join(kolonyDir, 'sites-enabled');
 
   logBase('looking for kolony dir');
   if (!fs.existsSync(kolonyDir)) {
     fs.mkdirSync(kolonyDir);
+    logChild('created folder');
+  } else {
+    logChild('found folder');
+  }
+
+  logBase('looking for projects dir');
+  if (!fs.existsSync(projectsDir)) {
+    fs.mkdirSync(projectsDir);
     logChild('created folder');
   } else {
     logChild('found folder');
