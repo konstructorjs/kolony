@@ -21,7 +21,7 @@ const run = (command, inputOptions) => {
   execSync(builder, execOptions);
 };
 
-const start = async (args) => {
+const build = async (args) => {
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
   const name = args.name;
@@ -140,7 +140,7 @@ const start = async (args) => {
   logBase('DONE!');
 };
 
-module.exports.command = 'start <name>';
+module.exports.command = 'build <name>';
 module.exports.desc = false;
 module.exports.builder = {
   name: {
@@ -149,7 +149,7 @@ module.exports.builder = {
 };
 
 module.exports.handler = (args) => {
-  start(args).catch((err) => {
+  build(args).catch((err) => {
     console.log(`${err}`);
     process.exit(1);
   });
