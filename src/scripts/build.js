@@ -112,8 +112,14 @@ const build = async (args) => {
   logBase('installing packages');
   run(`nvm exec --silent ${nodeVersion} npm install | sed 's/^/\t/'`, { show: true });
 
+  logBase('cleaning assets');
+  run(`nvm exec --silent ${nodeVersion} npm run clean | sed 's/^/\t/'`, { show: true });
+
   logBase('building assets');
   run(`nvm exec --silent ${nodeVersion} npm run build | sed 's/^/\t/'`, { show: true });
+
+  logBase('digesting assets');
+  run(`nvm exec --silent ${nodeVersion} npm run digest | sed 's/^/\t/'`, { show: true });
 
   logBase('starting server');
   run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} npm -- start`);
