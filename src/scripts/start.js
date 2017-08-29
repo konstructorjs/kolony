@@ -4,6 +4,8 @@ const bs58 = require('bs58');
 const fs = require('fs');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
+const { logBase, logChild } = require('../utils/logger.js');
+const config = require('../utils/config');
 const ports = require('../utils/ports');
 
 const run = (command, inputOptions) => {
@@ -19,23 +21,13 @@ const run = (command, inputOptions) => {
   execSync(builder, execOptions);
 };
 
-const logBase = (message) => {
-  console.log(`> ${message}`);
-};
-
-const logChild = (message) => {
-  console.log(`\t${message}`);
-};
-
 const start = async (args) => {
-  console.log('/*');
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
   const name = args.name;
   const gitDir = path.join(kolonyDir, name);
   const projectsDir = path.join(kolonyDir, './projects');
   const projectDir = path.join(projectsDir, name);
-  const kolonyFile = path.join(kolonyDir, './kolony.json');
 
   if (!fs.existsSync(projectsDir)) {
     throw new Error('unable to find kolony directory. please run kolony setup');
@@ -57,15 +49,8 @@ const start = async (args) => {
   process.chdir(projectDir);
 
   console.log(`> checking the status of ${name}`);
-  let oldID;
-  let kolonyData;
-  try {
-    kolonyData = require(kolonyFile);
-    oldID = kolonyData[name].id;
-  } catch (_) {
-    kolonyData = {};
-    oldID = undefined;
-  }
+  const kolonyData = await config.getConfig();
+  const oldID = (kolonyData[name]) ? kolonyData[name].id : undefined;
 
   let port;
   if (kolonyData[name] && kolonyData[name].port) {
@@ -141,7 +126,7 @@ const start = async (args) => {
   kolonyData[name] = data;
 
   logBase('saving new project status');
-  fs.writeFileSync(kolonyFile, JSON.stringify(kolonyData, null, 2));
+  await config.setConfig(kolonyData);
 
   if (oldID) {
     logBase('deleting old project instance');
@@ -153,7 +138,6 @@ const start = async (args) => {
     }
   }
   logBase('DONE!');
-  console.log('*/');
 };
 
 module.exports.command = 'start <name>';
@@ -166,7 +150,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   start(args).catch((err) => {
-    console.log(` [ERR] ${err}`);
+    console.log(`${err}`);
     process.exit(1);
   });
 };
