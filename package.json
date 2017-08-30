@@ -1,6 +1,6 @@
 {
   "name": "kolony",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "deployment manager for konstructor",
   "main": "lib",
   "scripts": {
