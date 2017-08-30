@@ -1,6 +1,6 @@
 {
   "name": "kolony",
-  "version": "0.0.1",
+  "version": "0.0.0-development",
   "description": "deployment manager for konstructor",
   "main": "lib",
   "scripts": {
@@ -8,11 +8,12 @@
     "prepublish": "npm run compile",
     "compile": "babel --out-dir lib/ --copy-files src/",
     "test": "npm run lint",
-    "lint": "eslint *.js src/."
+    "lint": "eslint *.js src/.",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/konstructorjs/kolony.git"
+    "url": "https://github.com/konstructorjs/kolony.git"
   },
   "keywords": [
     "konstructor"
@@ -26,9 +27,11 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.0",
+    "condition-circle": "^1.5.0",
     "eslint": "^4.4.1",
     "eslint-config-airbnb-base": "^11.3.1",
-    "eslint-plugin-import": "^2.7.0"
+    "eslint-plugin-import": "^2.7.0",
+    "semantic-release": "^7.0.2"
   },
   "dependencies": {
     "bs58": "^4.0.1",
@@ -43,5 +46,8 @@
   "engines": {
     "node": ">=7.6.0",
     "npm": ">=4.0.0"
+  },
+  "release": {
+    "verifyConditions": "condition-circle"
   }
 }
