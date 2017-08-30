@@ -3,23 +3,10 @@ const path = require('path');
 const bs58 = require('bs58');
 const fs = require('fs');
 const crypto = require('crypto');
-const { execSync } = require('child_process');
 const { logBase, logChild } = require('../utils/logger.js');
 const config = require('../utils/config');
 const ports = require('../utils/ports');
-
-const run = (command, inputOptions) => {
-  const options = inputOptions || {};
-  let builder = '';
-  if (command.split(' ')[0] === 'nvm' || options.nvm) {
-    builder += '. "$NVM_DIR/nvm.sh" && ';
-  }
-  builder += command;
-  const execOptions = {
-    stdio: (options.show) ? 'inherit' : 'ignore',
-  };
-  execSync(builder, execOptions);
-};
+const run = require('../utils/run');
 
 const build = async (args) => {
   const homeDir = os.homedir();

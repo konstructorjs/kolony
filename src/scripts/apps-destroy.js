@@ -1,9 +1,10 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const rimraf = require('rimraf');
 const { logBase, logChild } = require('../utils/logger');
 const config = require('../utils/config');
-const rimraf = require('rimraf');
+const run = require('../utils/run');
 
 const rmDir = dirPath => new Promise((resolve, reject) => {
   rimraf(dirPath, (err) => {
@@ -38,6 +39,15 @@ const create = async (args) => {
     throw new Error('please remove domains before deleting an application');
   } else {
     logChild('no domains found');
+  }
+
+  logBase('removing application process');
+  if (project.id) {
+    run(`pm2 stop ${name}-${project.id}`);
+    run(`pm2 delete ${name}-${project.id}`);
+    logChild('removed application process');
+  } else {
+    logChild('application not running');
   }
 
   logBase('removing project build directory');
