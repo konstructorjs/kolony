@@ -26,6 +26,9 @@ const build = async (args) => {
   logBase('fetching updates');
   if (fs.existsSync(projectDir)) {
     process.chdir(projectDir);
+    logChild('cleaning temporary files');
+    run('git reset --hard HEAD');
+    run('git clean -f');
     logChild('pulling updates');
     run('git pull origin master');
   } else {
