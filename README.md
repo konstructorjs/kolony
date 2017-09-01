@@ -6,8 +6,8 @@
   <a href="https://www.npmjs.com/package/kolony"><img src="https://img.shields.io/npm/l/kolony.svg" alt="License"></a>
 </p>
 
-# kolony - a self hosted deployment tool for [konstructor](https://github.com/konstructorjs/konstructor)
-kolony is very similar to [Dokku](https://github.com/dokku/dokku) or [Heroku](https://www.heroku.com/). unlike Dokku, kolony does not use docker which means it can run on cheap OpenVZ servers like [VPSDime](https://vpsdime.com/aff.php?aff=1576)
+# kolony - a self hosted deployment tool
+kolony is similar to [Dokku](https://github.com/dokku/dokku) or [Heroku](https://www.heroku.com/), but it is based off of pm2 instead of docker which means it can run on cheap OpenVZ servers like [VPSDime](https://vpsdime.com/aff.php?aff=1576), as well as KVM servers like [DigitalOcean](https://m.do.co/c/4bfd9876d75a)
 
 ## Getting Started
 
@@ -29,4 +29,4 @@ kolony setup
 ```
 
 ## Documentation/Guides
-You can find all of the documentation on [konstructor's website](https://konstructor.js.org/docs/kolony).
+You can find all of the documentation on [konstructor's website](https://konstructor.js.org/guides/kolony).
