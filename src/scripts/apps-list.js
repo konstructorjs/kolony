@@ -12,13 +12,17 @@ const list = async () => {
     try {
       const app = require(path.join(dirs.ecosystems, ecosystem)).apps[0];
       const nameSplit = app.name.split('-');
-      const id = nameSplit.pop();
+      let id;
+      if (nameSplit.length >= 2) {
+        id = nameSplit.pop();
+      }
       const name = nameSplit.join('-');
       const port = app.port;
       const env = app.env || {};
       const environment = env.NODE_ENV;
 
       const domains = [];
+      app.domains = app.domains || [];
       app.domains.forEach((domain) => {
         domains.push(domain.domain);
       });
