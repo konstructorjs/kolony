@@ -1,27 +1,26 @@
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
-const homeDir = os.homedir();
-const kolonyDir = path.join(homeDir, './.kolony');
-const kolonyFile = path.join(kolonyDir, './kolony.json');
+const dirs = require('./dirs');
 
 module.exports = {
-  async getConfig() {
+  async getEcosystem(name) {
+    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
     return new Promise((resolve, reject) => {
       try {
-        if (!fs.existsSync(kolonyFile)) {
-          resolve({});
+        if (!fs.existsSync(ecosystemPath)) {
+          resolve(null);
         } else {
-          resolve(require(kolonyFile));
+          resolve(require(ecosystemPath));
         }
       } catch (err) {
-        reject('unable to load kolony data file.');
+        reject('unable to load ecosystem');
       }
     });
   },
 
-  async setConfig(data) {
-    fs.writeFileSync(kolonyFile, JSON.stringify(data, null, 2));
+  async setEcosystem(name, data) {
+    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
+    fs.writeFileSync(ecosystemPath, JSON.stringify(data, null, 2));
   },
 };

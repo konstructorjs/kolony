@@ -5,7 +5,7 @@ const run = require('../utils/run');
 const config = require('../utils/config');
 const dirs = require('../utils/dirs');
 
-const set = async (args) => {
+const unset = async (args) => {
   const name = args.name;
   logBase('looking for application');
 
@@ -17,30 +17,28 @@ const set = async (args) => {
   logChild(`found application ${name}`);
 
   logBase('processing environment variables');
-  const variables = [];
-  variables.push(args.variables);
+  const keys = [];
+  keys.push(args.keys);
   if (args._.length > 1) {
-    const extraVariables = args._;
-    extraVariables.shift();
-    extraVariables.forEach(variable => variables.push(variable));
+    const extraKeys = args._;
+    extraKeys.shift();
+    extraKeys.forEach(key => keys.push(key));
   }
 
-  logChild(`adding ${variables.length} environment variables`);
+  logChild(`removing ${keys.length} environment variables`);
   const env = app.env || {};
-  variables.forEach((variable) => {
-    const arr = variable.split('=');
-    const key = arr[0];
-    const value = arr[1];
-    if (arr.length !== 2) {
-      throw new Error(`invalid environment variable argument ${variable}`);
+  keys.forEach((key) => {
+    try {
+      delete env[key];
+    } catch (_) {
+      throw new Error(`unable to remove key ${key}`);
     }
-    env[key] = value;
   });
 
   app.env = env;
   ecosystem.apps = [app];
   await config.setEcosystem(name, ecosystem);
-  logChild('added environment variables');
+  logChild('removed environment variables');
 
   if (app.cwd) {
     logBase('restarting application');
@@ -49,27 +47,27 @@ const set = async (args) => {
     logChild('app restarted successfully');
   }
 
-  logBase('successfully added the following environment variables');
-  variables.forEach((variable) => {
-    logChild(variable);
+  logBase('successfully removed the following environment variables');
+  keys.forEach((key) => {
+    logChild(key);
   });
 
   console.log();
 };
 
-module.exports.command = 'config:set <name> <variables>';
-module.exports.desc = 'set environment variables for app';
+module.exports.command = 'config:unset <name> <keys>';
+module.exports.desc = 'unset environment variables for app';
 module.exports.builder = {
   name: {
     describe: 'the name of the application',
   },
-  variables: {
-    describe: 'the environment variables you would like to add',
+  keys: {
+    describe: 'the keys of the environment variables you would like to remove',
   },
 };
 
 module.exports.handler = (args) => {
-  set(args).catch((err) => {
+  unset(args).catch((err) => {
     console.log(`${err}`);
     process.exit(1);
   });

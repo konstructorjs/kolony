@@ -1,9 +1,10 @@
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
+
 const { logBase, logChild } = require('../utils/logger');
 const config = require('../utils/config');
+const dirs = require('../utils/dirs');
 const run = require('../utils/run');
 
 const rmDir = dirPath => new Promise((resolve, reject) => {
@@ -16,46 +17,43 @@ const rmDir = dirPath => new Promise((resolve, reject) => {
   });
 });
 
-const create = async (args) => {
-  const homeDir = os.homedir();
-  const kolonyDir = path.join(homeDir, './.kolony');
+const destroy = async (args) => {
   const name = args.name;
-  const gitDir = path.join(kolonyDir, name);
-  const projectDir = path.join(kolonyDir, './projects', name);
-  const homeLink = path.join(homeDir, name);
+  const gitDir = path.join(dirs.git, name);
+  const buildDir = path.join(dirs.builds, name);
+  const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
+  const homeLink = path.join(dirs.home, name);
 
-  logBase('checking application information');
-  const kolonyData = await config.getConfig();
-
-  const project = kolonyData[name];
-  if (!project) {
+  logBase('looking for application');
+  if (!dirs.gitExists(name)) {
     throw new Error('cannot find application');
   } else {
     logChild('found application');
   }
 
-  logBase('checking for domains');
-  if (project.domains && project.domains.length > 0) {
-    throw new Error('please remove domains before deleting an application');
-  } else {
-    logChild('no domains found');
+  let app;
+  try {
+    const ecosystem = await config.getEcosystem(name);
+    app = ecosystem.apps[0];
+  } catch (_) {
+    app = {};
   }
 
   logBase('removing application process');
-  if (project.id) {
-    run(`pm2 stop ${name}-${project.id}`);
-    run(`pm2 delete ${name}-${project.id}`);
+  if (app.cwd) {
+    run(`pm2 stop ${ecosystemPath}`);
+    run(`pm2 delete ${ecosystemPath}`);
     logChild('removed application process');
   } else {
     logChild('application not running');
   }
 
   logBase('removing project build directory');
-  if (fs.existsSync(projectDir)) {
-    await rmDir(projectDir);
+  if (fs.existsSync(buildDir)) {
+    await rmDir(buildDir);
     logChild('removed project directory');
   } else {
-    logChild('project directory does not exist');
+    logChild('build directory does not exist');
   }
 
   logBase('removing links');
@@ -72,10 +70,15 @@ const create = async (args) => {
     logChild('git directory does not exist');
   }
 
-  logBase('removing application information');
-  delete kolonyData[name];
-  await config.setConfig(kolonyData);
-  logChild('removed application information');
+  logBase('removing ecosystem config');
+  if (fs.existsSync(ecosystemPath)) {
+    fs.unlinkSync(ecosystemPath);
+    logChild('removed ecosystem config');
+  } else {
+    logChild('ecosystem config does not exist');
+  }
+
+  console.log();
 };
 
 module.exports.command = 'apps:destroy <name>';
@@ -86,7 +89,7 @@ module.exports.builder = {
   },
 };
 module.exports.handler = (args) => {
-  create(args).catch((err) => {
+  destroy(args).catch((err) => {
     console.log(`${err}`);
     process.exit(1);
   });

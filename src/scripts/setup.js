@@ -39,8 +39,10 @@ const setup = async () => {
 
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
-  const projectsDir = path.join(kolonyDir, './projects');
-  const sitesEnabledDir = path.join(kolonyDir, 'sites-enabled');
+  const buildsDir = path.join(kolonyDir, './builds');
+  const gitDir = path.join(kolonyDir, './git');
+  const sitesEnabledDir = path.join(kolonyDir, './sites-enabled');
+  const ecosystemsDir = path.join(kolonyDir, './ecosystems');
 
   logBase('looking for kolony dir');
   if (!fs.existsSync(kolonyDir)) {
@@ -50,9 +52,17 @@ const setup = async () => {
     logChild('found folder');
   }
 
-  logBase('looking for projects dir');
-  if (!fs.existsSync(projectsDir)) {
-    fs.mkdirSync(projectsDir);
+  logBase('looking for git dir');
+  if (!fs.existsSync(gitDir)) {
+    fs.mkdirSync(gitDir);
+    logChild('created folder');
+  } else {
+    logChild('found folder');
+  }
+
+  logBase('looking for builds dir');
+  if (!fs.existsSync(buildsDir)) {
+    fs.mkdirSync(buildsDir);
     logChild('created folder');
   } else {
     logChild('found folder');
@@ -65,6 +75,16 @@ const setup = async () => {
   } else {
     logChild('found folder');
   }
+
+  logBase('looking for ecosystems dir');
+  if (!fs.existsSync(ecosystemsDir)) {
+    fs.mkdirSync(ecosystemsDir);
+    logChild('created folder');
+  } else {
+    logChild('found folder');
+  }
+
+  console.log();
 };
 
 module.exports.command = 'setup';

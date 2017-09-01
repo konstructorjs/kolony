@@ -1,9 +1,10 @@
 const kopy = require('kopy');
-const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
-const { logBase, logChild } = require('../utils/logger.js');
 const fs = require('fs');
+
+const dirs = require('../utils/dirs');
+const { logBase, logChild } = require('../utils/logger.js');
 const config = require('../utils/config');
 
 const nginxPaths = [
@@ -11,45 +12,48 @@ const nginxPaths = [
   '/usr/local/etc/nginx/sites-enabled',
 ];
 
-const homeDir = os.homedir();
-const kolonyDir = path.join(homeDir, './.kolony');
 const blueprintsDir = path.join(__dirname, '../../blueprints');
-const sitesEnabledDir = path.join(kolonyDir, './sites-enabled');
 
 const add = async (args) => {
   const name = args.name;
   const domain = args.domain;
 
-  logBase('looking for application information');
-  const kolonyData = await config.getConfig();
-  const port = (kolonyData[name]) ? kolonyData[name].port : undefined;
+  logBase('looking for application');
+  const ecosystem = await config.getEcosystem(name);
+  if (!ecosystem) {
+    throw new Error(`couldnt find ecosystem ${name}`);
+  }
+  const app = ecosystem.apps[0];
+  const splitName = app.name.split('-');
+  splitName.pop();
+  const appName = splitName.join('-');
+  const port = app.port;
+  logChild(`found ${appName}`);
+
+  console.log();
   if (port) {
-    logChild(`found ${name} running on ${port}`);
+    logChild(`found port ${port}`);
   } else {
-    throw new Error('could not find application. please push before you add a domain');
+    throw new Error('could not find port. please push before you add a domain');
   }
 
   logBase('checking to see if domain is already in use');
-  const duplicates = Object.keys(kolonyData).filter((key) => {
-    const obj = kolonyData[key];
-    return (obj.domains && obj.domains.includes(domain));
-  });
-
-  if (duplicates.length > 0) {
+  const existingDomains = fs.readdirSync(dirs.sitesEnabled);
+  if (existingDomains.includes(domain)) {
     throw new Error('domain is already being used');
   } else {
-    logChild('domain is not already in use');
+    logChild('domain is not in use');
   }
 
   logBase(`adding ${domain} to nginx`);
-  await kopy(path.join(blueprintsDir, './sites-enabled'), sitesEnabledDir, {
+  await kopy(path.join(blueprintsDir, './sites-enabled'), dirs.sitesEnabled, {
     data: {
       domain,
       port,
     },
   });
 
-  fs.renameSync(path.join(sitesEnabledDir, './sites-enabled'), path.join(sitesEnabledDir, domain));
+  fs.renameSync(path.join(dirs.sitesEnabled, './sites-enabled'), path.join(dirs.sitesEnabled, domain));
 
   logChild('generated nginx config file');
 
@@ -62,21 +66,23 @@ const add = async (args) => {
     return false;
   });
 
-  fs.symlinkSync(path.join(sitesEnabledDir, domain), path.join(nginxPath, domain));
+  fs.symlinkSync(path.join(dirs.sitesEnabled, domain), path.join(nginxPath, domain));
 
-  logChild('copied to nginx');
+  logChild('linked to nginx');
+
+  logBase('saving application information');
+  app.domains = app.domains || [];
+  app.domains.push({
+    domain,
+  });
+  ecosystem.apps = [app];
+  await config.setEcosystem(name, ecosystem);
 
   logBase('reloading nginx');
   execSync('nginx -s reload');
   logChild('nginx reloaded');
 
-  logBase('updating application information');
-  const domains = kolonyData[name].domains || [];
-  domains.push(domain);
-  kolonyData[name].domains = domains;
-
-  await config.setConfig(kolonyData);
-  logChild('updated application information');
+  console.log();
 };
 
 module.exports.command = 'domains:add <name> <domain>';
