@@ -111,8 +111,16 @@ const build = async (args) => {
   logBase('digesting assets');
   run(`nvm exec --silent ${nodeVersion} npm run digest | sed 's/^/\t/'`, { show: true });
 
+  logBase('loading environment variables');
+  let vars = '';
+  Object.keys(kolonyData[name].envVariables).forEach((key) => {
+    const value = kolonyData[name].envVariables[key];
+    vars = `${vars}${key}="${value}" `;
+  });
+  vars.trim();
+
   logBase('starting server');
-  run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} npm -- start`);
+  run(`${vars} pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} npm -- start`);
   logChild(`started server on port ${port}`);
 
   const data = {
