@@ -46,7 +46,7 @@
     "kolony": "lib/index.js"
   },
   "engines": {
-    "node": ">=7.6.0",
+    "node": ">=6.0.0",
     "npm": ">=4.0.0"
   },
   "release": {

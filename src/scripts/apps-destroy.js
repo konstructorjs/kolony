@@ -20,7 +20,6 @@ const rmDir = dirPath => new Promise((resolve, reject) => {
 const destroy = async (args) => {
   const name = args.name;
   const gitDir = path.join(dirs.git, name);
-  const buildDir = path.join(dirs.builds, name);
   const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
   const homeLink = path.join(dirs.home, name);
 
@@ -49,8 +48,8 @@ const destroy = async (args) => {
   }
 
   logBase('removing project build directory');
-  if (fs.existsSync(buildDir)) {
-    await rmDir(buildDir);
+  if (app.cwd && fs.existsSync(app.cwd)) {
+    await rmDir(app.cwd);
     logChild('removed project directory');
   } else {
     logChild('build directory does not exist');

@@ -7,7 +7,7 @@
 </p>
 
 # kolony - a self hosted deployment tool
-kolony is similar to [Dokku](https://github.com/dokku/dokku) or [Heroku](https://www.heroku.com/), but it is based off of pm2 instead of docker which means it can run on cheap OpenVZ servers like [VPSDime](https://vpsdime.com/aff.php?aff=1576), as well as KVM servers like [DigitalOcean](https://m.do.co/c/4bfd9876d75a)
+kolony is similar to tools like [Dokku](https://github.com/dokku/dokku) or [Flynn](https://flynn.io/), but it is based off of pm2 instead of docker which means it can run on cheap OpenVZ servers like [VPSDime](https://vpsdime.com/aff.php?aff=1576) (affiliate link), as well as more expensive KVM servers like [DigitalOcean](https://m.do.co/c/4bfd9876d75a) (affiliate link)
 
 ## Getting Started
 

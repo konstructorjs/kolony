@@ -13,7 +13,7 @@ const list = async () => {
       const app = require(path.join(dirs.ecosystems, ecosystem)).apps[0];
       const nameSplit = app.name.split('-');
       let id;
-      if (nameSplit.length >= 2) {
+      if (app.cwd) {
         id = nameSplit.pop();
       }
       const name = nameSplit.join('-');
