@@ -139,17 +139,34 @@ const build = async (args) => {
   ecosystem.apps = [app];
   await config.setEcosystem(name, ecosystem);
 
-  logBase('installing packages');
-  run(`nvm exec --silent ${nodeVersion} npm install | sed 's/^/\t/'`, { show: true });
+  const stages = packageJSON.kolony || {};
 
-  logBase('cleaning assets');
-  run(`nvm exec --silent ${nodeVersion} npm run clean | sed 's/^/\t/'`, { show: true });
+  const runScript = (scriptName, command) => {
+    logBase(`running ${scriptName} script`);
+    if (command) {
+      run(`nvm exec --silent ${nodeVersion} ${command} | sed 's/^/\t/'`, { show: true });
+    } else {
+      logChild(`no ${scriptName} script defined`);
+    }
+  };
 
-  logBase('building assets');
-  run(`nvm exec --silent ${nodeVersion} npm run build | sed 's/^/\t/'`, { show: true });
+  const preInstallScript = stages['pre-install'];
+  runScript('pre-install', preInstallScript);
 
-  logBase('digesting assets');
-  run(`nvm exec --silent ${nodeVersion} npm run digest | sed 's/^/\t/'`, { show: true });
+  const installScript = stages.install || 'npm install';
+  runScript('install', installScript);
+
+  const postInstallScript = stages['post-install'];
+  runScript('post-install', postInstallScript);
+
+  const preBuildScript = stages['pre-build'];
+  runScript('pre-build', preBuildScript);
+
+  const buildScript = stages.build || 'npm run build';
+  runScript('build', buildScript);
+
+  const postBuildScript = stages['post-build'];
+  runScript('post-build', postBuildScript);
 
   logBase('starting server');
   run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} ${ecosystemPath}`);
