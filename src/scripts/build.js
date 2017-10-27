@@ -172,6 +172,10 @@ const build = async (args) => {
   run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} ${ecosystemPath}`);
   logChild(`started server on port ${port}`);
 
+  logBase('saving process in pm2');
+  run('pm2 save');
+  logChild('process is saved');
+
   if (oldID) {
     logBase('deleting old project instance');
     try {
