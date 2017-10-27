@@ -84,6 +84,8 @@ const setup = async () => {
     logChild('found folder');
   }
 
+  logBase('if you haven\'t already, run `pm2 startup` to restart your processes on reboot');
+
   console.log();
 };
 
