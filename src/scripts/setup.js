@@ -39,6 +39,7 @@ const setup = async () => {
 
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
+  const sourcesDir = path.join(kolonyDir, './sources');
   const buildsDir = path.join(kolonyDir, './builds');
   const gitDir = path.join(kolonyDir, './git');
   const sitesEnabledDir = path.join(kolonyDir, './sites-enabled');
@@ -55,6 +56,14 @@ const setup = async () => {
   logBase('looking for git dir');
   if (!fs.existsSync(gitDir)) {
     fs.mkdirSync(gitDir);
+    logChild('created folder');
+  } else {
+    logChild('found folder');
+  }
+
+  logBase('looking for sources dir');
+  if (!fs.existsSync(sourcesDir)) {
+    fs.mkdirSync(sourcesDir);
     logChild('created folder');
   } else {
     logChild('found folder');

@@ -38,6 +38,7 @@
     "console.table": "^0.9.1",
     "kopy": "^8.1.0",
     "ncp": "^2.0.0",
+    "pkg": "^4.2.5",
     "portscanner": "^2.1.1",
     "rimraf": "^2.6.1",
     "yargs": "^8.0.2"
