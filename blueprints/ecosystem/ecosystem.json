@@ -2,8 +2,8 @@
   "apps": [
     {
       "name": "<%= name %>",
-      "script": "npm",
-      "args" : "start"
+      "cwd": "<%= buildsDirectory %>",
+      "script" : "<%= name %>"
     }
   ]
 }

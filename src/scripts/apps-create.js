@@ -62,6 +62,7 @@ const create = async (args) => {
   await kopy(path.join(blueprintsDir, './ecosystem'), dirs.ecosystems, {
     data: {
       name,
+      buildsDirectory: dirs.builds,
     },
   });
 
