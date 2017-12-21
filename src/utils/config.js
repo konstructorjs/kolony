@@ -4,23 +4,23 @@ const fs = require('fs');
 const dirs = require('./dirs');
 
 module.exports = {
-  async getEcosystem(name) {
-    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
+  async getMetadata() {
+    const metadataPath = path.join(dirs.kolony, 'metadata.json');
     return new Promise((resolve, reject) => {
       try {
-        if (!fs.existsSync(ecosystemPath)) {
+        if (!fs.existsSync(metadataPath)) {
           resolve(null);
         } else {
-          resolve(require(ecosystemPath));
+          resolve(require(metadataPath));
         }
       } catch (err) {
-        reject('unable to load ecosystem');
+        reject('unable to load metadata');
       }
     });
   },
 
-  async setEcosystem(name, data) {
-    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
-    fs.writeFileSync(ecosystemPath, JSON.stringify(data, null, 2));
+  async setMetadata(data) {
+    const metadataPath = path.join(dirs.kolony, 'metadata.json');
+    fs.writeFileSync(metadataPath, JSON.stringify(data, null, 2));
   },
 };
