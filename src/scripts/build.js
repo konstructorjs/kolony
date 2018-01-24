@@ -3,7 +3,6 @@ const bs58 = require('bs58');
 const crypto = require('crypto');
 const rimraf = require('rimraf');
 const fs = require('fs');
-const shell = require('shelljs');
 
 const check = require('../utils/check');
 const dirs = require('../utils/dirs');
@@ -48,7 +47,7 @@ const build = async (args) => {
   logBase(`building application ${newID}`);
   process.env.GIT_DIR = '.git';
   logBase('cloning application');
-  shell.exec(`git clone ${gitDir} ${name}-${newID}`, { silent: true });
+  await run(`git clone ${gitDir} ${name}-${newID}`);
   logChild('application cloned');
 
   const buildDir = path.join(buildsDir, `${name}-${newID}`);
@@ -75,10 +74,30 @@ const build = async (args) => {
     logChild(`generated new port ${port}`);
   }
 
-  const strategyDir = path.join(__dirname, '../../../kolony-strategy');
-  const strategy = require(path.join(strategyDir, 'index.js'));
+  logBase('setting up strategy');
+  const metadataDir = path.join(appDir, './metadata');
+  const strategyGit = app.strategy || 'https://github.com/konstructorjs/kolony-konstructor-strategy.git';
+  const strategyName = path.basename(strategyGit).replace(/\.[^/.]+$/, '');
+  const strategyDir = path.join(metadataDir, strategyName);
+  if (fs.existsSync(strategyDir)) {
+    process.chdir(strategyDir);
+    await run('git pull origin master');
+    logChild('updated strategy');
+  } else {
+    await run(`git clone ${strategyGit} ${strategyDir}`);
+    process.chdir(strategyDir);
+    logChild('downloaded strategy');
+  }
+  await run('npm install');
+  logChild('installed strategy dependencies');
+  process.chdir(buildDir);
+  let strategy;
+  try {
+    strategy = require(path.join(strategyDir, 'index.js'));
+  } catch (err) {
+    throw new Error('unable to import strategy');
+  }
   const scripts = strategy.scripts;
-
   const start = async (input) => {
     logBase('starting server');
 
@@ -88,7 +107,6 @@ const build = async (args) => {
     }
     const pm2Args = input.args;
 
-    const metadataDir = path.join(appDir, './metadata');
     const ecosystemPath = path.join(metadataDir, './ecosystem.json');
     let ecosystem;
     try {
@@ -137,7 +155,7 @@ const build = async (args) => {
   for (let i = 0; i < scripts.length; i += 1) {
     console.log();
     console.log(`--- ${scripts[i].description} ---`);
-    const script = require(path.join(strategyDir, './scripts', scripts[i].script));
+    const script = require(path.join(strategyDir, './lib', scripts[i].script));
     ctx = await script(ctx); // eslint-disable-line
   }
 
