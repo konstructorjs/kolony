@@ -72,7 +72,7 @@ const create = async (args) => {
       name,
     },
   });
-  execSync('chmod +x ./hooks/post-receive', {
+  execSync(`chmod ug+x ${path.join(gitDir, './hooks/post-receive')}`, {
     cwd: gitDir,
   });
   logChild('set up git hooks');
@@ -81,6 +81,8 @@ const create = async (args) => {
   await kopy(path.join(blueprintsDir, './ecosystem'), metadataDir, {
     data: {
       name,
+      script: 'npm',
+      args: 'start',
     },
   });
   logChild('created pm2 config');
@@ -88,6 +90,7 @@ const create = async (args) => {
   metadata[name] = {
     name,
     path: appDir,
+    env: {},
   };
   await config.setMetadata(metadata);
   logChild('updated metadata');

@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const config = require('../utils/config');
+const run = require('../utils/run');
 const { logBase, logChild, logError } = require('../utils/logger');
 
 const checkCommand = async (command) => {
@@ -16,11 +17,21 @@ const checkCommand = async (command) => {
 const setup = async () => {
   await checkCommand('git');
 
-  await checkCommand('nginx');
+  logBase('checking to see if nvm is installed');
+  try {
+    await run('. "$NVM_DIR/nvm.sh" && nvm --version');
+    logChild('nvm is installed');
+  } catch (err) {
+    throw new Error('nvm is not installed');
+  }
+  logChild('set the default node version to the current version');
+  await run('nvm alias default $(node -v)');
 
   await checkCommand('node');
 
   await checkCommand('pm2');
+
+  await checkCommand('nginx');
 
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
