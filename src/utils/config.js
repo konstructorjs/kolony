@@ -4,9 +4,9 @@ const fs = require('fs');
 const dirs = require('./dirs');
 
 module.exports = {
-  async getMetadata() {
+  async getMetadata(name) {
     const metadataPath = path.join(dirs.kolony, 'metadata.json');
-    return new Promise((resolve, reject) => {
+    const json = await new Promise((resolve, reject) => {
       try {
         if (!fs.existsSync(metadataPath)) {
           resolve(null);
@@ -17,10 +17,26 @@ module.exports = {
         reject('unable to load metadata');
       }
     });
+    if (name) {
+      const metadata = json[name];
+      if (metadata) {
+        return metadata;
+      }
+      throw new Error('cannot find application');
+    } else {
+      return json;
+    }
   },
 
-  async setMetadata(data) {
-    const metadataPath = path.join(dirs.kolony, 'metadata.json');
-    fs.writeFileSync(metadataPath, JSON.stringify(data, null, 2));
+  async setMetadata(data, name) {
+    if (name) {
+      const json = await this.getMetadata();
+      json[name] = data;
+      const metadataPath = path.join(dirs.kolony, 'metadata.json');
+      fs.writeFileSync(metadataPath, JSON.stringify(json, null, 2));
+    } else {
+      const metadataPath = path.join(dirs.kolony, 'metadata.json');
+      fs.writeFileSync(metadataPath, JSON.stringify(data, null, 2));
+    }
   },
 };

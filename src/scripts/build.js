@@ -26,15 +26,12 @@ const build = async (args) => {
 
   const name = args.name;
   const appDir = path.join(dirs.kolony, name);
-  const metadata = await config.getMetadata();
-
-  if (!metadata[name] || !fs.existsSync(appDir)) {
+  const app = await config.getMetadata(name);
+  if (!app) {
     throw new Error('cannot find application');
   } else {
     logChild('found application');
   }
-
-  const app = metadata[name];
   const oldID = app.id || '';
   const newID = bs58.encode(crypto.randomBytes(4));
   app.id = newID;
@@ -167,8 +164,7 @@ const build = async (args) => {
   logChild('process is saved');
 
   logBase('saving changes');
-  metadata[name] = app;
-  await config.setMetadata(metadata);
+  await config.setMetadata(app, name);
   logChild('changes saved');
 
   if (oldID) {

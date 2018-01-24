@@ -16,6 +16,21 @@ const create = async (args) => {
   if (/[^a-z-]/gi.test(name)) {
     throw new Error('name must only contain lowercase letters and dashes');
   }
+  logChild('name valid');
+
+  logBase('checking if app exists');
+  let metadata;
+  try {
+    metadata = await config.getMetadata(name);
+  } catch (err) {
+    // do nothing
+  }
+  if (metadata) {
+    throw new Error('app already exists');
+  } else {
+    metadata = {};
+    logChild('app does not exist');
+  }
 
   logBase('creating app directories');
   const appDir = path.join(dirs.kolony, name);
@@ -86,14 +101,13 @@ const create = async (args) => {
     },
   });
   logChild('created pm2 config');
-  const metadata = await config.getMetadata() || {};
-  metadata[name] = {
+  metadata = {
     name,
     path: appDir,
     env: {},
     strategy: args.strategy,
   };
-  await config.setMetadata(metadata);
+  await config.setMetadata(metadata, name);
   logChild('updated metadata');
 
   console.log();
