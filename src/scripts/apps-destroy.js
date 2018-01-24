@@ -4,6 +4,7 @@ const rimraf = require('rimraf');
 
 const { logBase, logChild, logError } = require('../utils/logger');
 const config = require('../utils/config');
+const run = require('../utils/run');
 const dirs = require('../utils/dirs');
 
 const rmDir = dirPath => new Promise((resolve, reject) => {
@@ -18,25 +19,29 @@ const rmDir = dirPath => new Promise((resolve, reject) => {
 
 const destroy = async (args) => {
   const name = args.name;
-  const metadata = await config.getMetadata();
   const appDir = path.join(dirs.kolony, name);
   const homeLink = path.join(dirs.home, name);
-
+  let app;
   logBase('looking for application');
-  if (!metadata[name] && !fs.existsSync(appDir)) {
+  try {
+    app = await config.getMetadata(name);
+  } catch (err) {
+    throw new Error('cannot find application');
+  }
+  if (!fs.existsSync(appDir)) {
     throw new Error('cannot find application');
   } else {
     logChild('found application');
   }
 
-  // logBase('removing application process');
-  // if (app.cwd) {
-  //   run(`pm2 stop ${ecosystemPath}`);
-  //   run(`pm2 delete ${ecosystemPath}`);
-  //   logChild('removed application process');
-  // } else {
-  //   logChild('application not running');
-  // }
+  logBase('removing application process');
+  if (app.pm2 && app.pm2.name) {
+    await run(`pm2 stop ${app.pm2.name}`);
+    await run(`pm2 delete ${app.pm2.name}`);
+    logChild('removed application process');
+  } else {
+    logChild('application not running');
+  }
 
   logBase('removing links');
   if (fs.existsSync(homeLink)) {
@@ -52,8 +57,8 @@ const destroy = async (args) => {
     logChild('app directory does not exist');
   }
 
-  delete metadata[name];
-  await config.setMetadata(metadata);
+
+  await config.setMetadata(undefined, name);
 
   console.log();
 };
