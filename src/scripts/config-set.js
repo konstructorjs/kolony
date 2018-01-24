@@ -1,6 +1,6 @@
 const path = require('path');
 
-const { logBase, logChild } = require('../utils/logger');
+const { logBase, logChild, logError } = require('../utils/logger');
 const run = require('../utils/run');
 const config = require('../utils/config');
 const dirs = require('../utils/dirs');
@@ -70,7 +70,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   set(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

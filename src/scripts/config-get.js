@@ -1,16 +1,13 @@
 require('console.table');
 
+const { logError } = require('../utils/logger');
 const config = require('../utils/config');
 
 const list = async (args) => {
   const name = args.name;
 
   const table = [];
-  const ecosystem = await config.getEcosystem(name);
-  if (!ecosystem) {
-    throw new Error('cannot find application');
-  }
-  const app = ecosystem.apps[0];
+  const app = await config.getMetadata(name);
   try {
     const env = app.env || {};
     Object.keys(env).forEach((key) => {
@@ -37,7 +34,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   list(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

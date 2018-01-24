@@ -9,6 +9,6 @@ module.exports = {
   },
 
   logError(message) {
-    console.log(`  ${message}`.toUpperCase());
+    console.log(`${message}`.toUpperCase());
   },
 };
