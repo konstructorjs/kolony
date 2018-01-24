@@ -91,6 +91,7 @@ const create = async (args) => {
     name,
     path: appDir,
     env: {},
+    strategy: args.strategy,
   };
   await config.setMetadata(metadata);
   logChild('updated metadata');
@@ -98,11 +99,15 @@ const create = async (args) => {
   console.log();
 };
 
-module.exports.command = 'apps:create <name>';
+module.exports.command = 'apps:create <name> [options]';
 module.exports.desc = 'create a new application';
 module.exports.builder = {
   name: {
     describe: 'the name of the application',
+  },
+  strategy: {
+    describe: 'custom strategy to use with the application',
+    alias: 's',
   },
 };
 module.exports.handler = (args) => {
