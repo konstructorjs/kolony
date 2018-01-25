@@ -86,6 +86,7 @@ const build = async (args) => {
     logChild('downloaded strategy');
   }
   await run('npm install');
+  await run('npm run compile');
   logChild('installed strategy dependencies');
   process.chdir(buildDir);
   let strategy;
