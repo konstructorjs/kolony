@@ -1,6 +1,6 @@
 {
   "name": "kolony",
-  "version": "0.0.2",
+  "version": "0.0.0-development",
   "description": "deployment manager for konstructor",
   "main": "lib",
   "scripts": {
@@ -9,7 +9,7 @@
     "compile": "babel --out-dir lib/ --copy-files src/",
     "test": "npm run lint",
     "lint": "eslint *.js src/.",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release"
   },
   "repository": {
     "type": "git",
@@ -26,19 +26,18 @@
   "homepage": "https://github.com/konstructorjs/kolony#readme",
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.0",
-    "condition-circle": "^1.5.0",
-    "eslint": "^4.4.1",
-    "eslint-config-airbnb-base": "^11.3.1",
-    "eslint-plugin-import": "^2.7.0",
-    "semantic-release": "^7.0.2"
+    "babel-preset-env": "^1.6.1",
+    "eslint": "^4.16.0",
+    "eslint-config-airbnb-base": "^11.3.2",
+    "eslint-plugin-import": "^2.8.0",
+    "semantic-release": "^12.2.4"
   },
   "dependencies": {
     "bs58": "^4.0.1",
     "console.table": "^0.9.1",
-    "kopy": "^8.1.0",
+    "kopy": "^8.2.5",
     "portscanner": "^2.1.1",
-    "rimraf": "^2.6.1",
+    "rimraf": "^2.6.2",
     "shelljs": "^0.7.8",
     "yargs": "^8.0.2"
   },
