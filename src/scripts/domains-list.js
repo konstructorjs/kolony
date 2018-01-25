@@ -1,15 +1,12 @@
 require('console.table');
 
 const config = require('../utils/config');
+const { logError } = require('../utils/logger');
 
 const list = async (args) => {
   const name = args.name;
 
-  const ecosystem = await config.getEcosystem(name);
-  const app = ecosystem.apps[0];
-  if (!ecosystem) {
-    throw new Error('couldnt find ecosystem');
-  }
+  const app = await config.getMetadata(name);
 
   const table = [];
 
@@ -48,7 +45,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   list(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

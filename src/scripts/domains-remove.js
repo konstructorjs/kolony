@@ -3,7 +3,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const dirs = require('../utils/dirs');
-const { logBase, logChild } = require('../utils/logger');
+const { logBase, logChild, logError } = require('../utils/logger');
 const config = require('../utils/config');
 
 const nginxPaths = [
@@ -16,15 +16,8 @@ const remove = async (args) => {
   const domain = args.domain;
 
   logBase('looking for application');
-  const ecosystem = await config.getEcosystem(name);
-  if (!ecosystem) {
-    throw new Error(`couldnt find ecosystem ${name}`);
-  }
-  const app = ecosystem.apps[0];
-  const splitName = app.name.split('-');
-  splitName.pop();
-  const appName = splitName.join('-');
-  logChild(`found ${appName}`);
+  const app = await config.getMetadata(name);
+  logChild(`found ${app.name}`);
 
   logBase('verifying domain is added to this project');
   const domains = app.domains || [];
@@ -36,7 +29,9 @@ const remove = async (args) => {
   }
 
   logBase('updating nginx');
-  fs.unlinkSync(path.join(dirs.sitesEnabled, domain));
+  const appDir = path.join(dirs.kolony, name);
+  const metadataDir = path.join(appDir, './metadata');
+  fs.unlinkSync(path.join(metadataDir, domain));
   logChild('removed config file');
 
   let nginxPath;
@@ -53,8 +48,7 @@ const remove = async (args) => {
 
   logBase('saving application information');
   app.domains = domains.filter(obj => obj.domain !== domain);
-  ecosystem.apps = [app];
-  await config.setEcosystem(name, ecosystem);
+  await config.setMetadata(app, name);
 
   logBase('reloading nginx');
   execSync('nginx -s reload');
@@ -76,7 +70,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   remove(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };
