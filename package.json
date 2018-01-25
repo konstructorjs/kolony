@@ -27,6 +27,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1",
+    "condition-circle": "^2.0.1",
     "eslint": "^4.16.0",
     "eslint-config-airbnb-base": "^11.3.2",
     "eslint-plugin-import": "^2.8.0",
