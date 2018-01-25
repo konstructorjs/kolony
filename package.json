@@ -37,9 +37,9 @@
     "bs58": "^4.0.1",
     "console.table": "^0.9.1",
     "kopy": "^8.1.0",
-    "ncp": "^2.0.0",
     "portscanner": "^2.1.1",
     "rimraf": "^2.6.1",
+    "shelljs": "^0.7.8",
     "yargs": "^8.0.2"
   },
   "bin": {

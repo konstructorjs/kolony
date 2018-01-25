@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 
-const { logBase, logChild } = require('../utils/logger');
+const { logBase, logChild, logError } = require('../utils/logger');
 const config = require('../utils/config');
-const dirs = require('../utils/dirs');
 const run = require('../utils/run');
+const dirs = require('../utils/dirs');
 
 const rmDir = dirPath => new Promise((resolve, reject) => {
   rimraf(dirPath, (err) => {
@@ -19,40 +19,28 @@ const rmDir = dirPath => new Promise((resolve, reject) => {
 
 const destroy = async (args) => {
   const name = args.name;
-  const gitDir = path.join(dirs.git, name);
-  const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
+  const appDir = path.join(dirs.kolony, name);
   const homeLink = path.join(dirs.home, name);
-
+  let app;
   logBase('looking for application');
-  if (!dirs.gitExists(name)) {
+  try {
+    app = await config.getMetadata(name);
+  } catch (err) {
+    throw new Error('cannot find application');
+  }
+  if (!fs.existsSync(appDir)) {
     throw new Error('cannot find application');
   } else {
     logChild('found application');
   }
 
-  let app;
-  try {
-    const ecosystem = await config.getEcosystem(name);
-    app = ecosystem.apps[0];
-  } catch (_) {
-    app = {};
-  }
-
   logBase('removing application process');
-  if (app.cwd) {
-    run(`pm2 stop ${ecosystemPath}`);
-    run(`pm2 delete ${ecosystemPath}`);
+  if (app.pm2 && app.pm2.name) {
+    await run(`pm2 stop ${app.pm2.name}`);
+    await run(`pm2 delete ${app.pm2.name}`);
     logChild('removed application process');
   } else {
     logChild('application not running');
-  }
-
-  logBase('removing project build directory');
-  if (app.cwd && fs.existsSync(app.cwd)) {
-    await rmDir(app.cwd);
-    logChild('removed project directory');
-  } else {
-    logChild('build directory does not exist');
   }
 
   logBase('removing links');
@@ -61,21 +49,16 @@ const destroy = async (args) => {
     logChild('unlinked files');
   }
 
-  logBase('removing git directory');
-  if (fs.existsSync(gitDir)) {
-    await rmDir(gitDir);
-    logChild('git directory removed');
+  logBase('removing app directory');
+  if (fs.existsSync(appDir)) {
+    await rmDir(appDir);
+    logChild('removed app directory');
   } else {
-    logChild('git directory does not exist');
+    logChild('app directory does not exist');
   }
 
-  logBase('removing ecosystem config');
-  if (fs.existsSync(ecosystemPath)) {
-    fs.unlinkSync(ecosystemPath);
-    logChild('removed ecosystem config');
-  } else {
-    logChild('ecosystem config does not exist');
-  }
+
+  await config.setMetadata(undefined, name);
 
   console.log();
 };
@@ -89,7 +72,7 @@ module.exports.builder = {
 };
 module.exports.handler = (args) => {
   destroy(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

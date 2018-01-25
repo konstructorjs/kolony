@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const dirs = require('../utils/dirs');
 
 const checkExists = (dir) => {
@@ -10,8 +11,6 @@ const checkExists = (dir) => {
 module.exports = {
   setup() {
     checkExists(dirs.kolony);
-    checkExists(dirs.ecosystems);
-    checkExists(dirs.git);
-    checkExists(dirs.builds);
+    checkExists(path.join(dirs.kolony, 'metadata.json'));
   },
 };

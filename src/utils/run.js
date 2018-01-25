@@ -1,6 +1,6 @@
-const { execSync } = require('child_process');
+const shell = require('shelljs');
 
-module.exports = (command, inputOptions) => {
+module.exports = (command, inputOptions) => new Promise((resolve, reject) => {
   const options = inputOptions || {};
   let builder = '';
   if (command.split(' ')[0] === 'nvm' || options.nvm) {
@@ -8,7 +8,12 @@ module.exports = (command, inputOptions) => {
   }
   builder += command;
   const execOptions = {
-    stdio: (options.show) ? 'inherit' : 'ignore',
+    silent: (!options.show),
   };
-  execSync(builder, execOptions);
-};
+  const run = shell.exec(builder, execOptions);
+  if (run.code !== 0) {
+    reject(`${command} exited with non zero code`);
+  } else {
+    resolve();
+  }
+});

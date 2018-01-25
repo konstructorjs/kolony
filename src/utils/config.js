@@ -4,23 +4,39 @@ const fs = require('fs');
 const dirs = require('./dirs');
 
 module.exports = {
-  async getEcosystem(name) {
-    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
-    return new Promise((resolve, reject) => {
+  async getMetadata(name) {
+    const metadataPath = path.join(dirs.kolony, 'metadata.json');
+    const json = await new Promise((resolve, reject) => {
       try {
-        if (!fs.existsSync(ecosystemPath)) {
+        if (!fs.existsSync(metadataPath)) {
           resolve(null);
         } else {
-          resolve(require(ecosystemPath));
+          resolve(require(metadataPath));
         }
       } catch (err) {
-        reject('unable to load ecosystem');
+        reject('unable to load metadata');
       }
     });
+    if (name) {
+      const metadata = json[name];
+      if (metadata) {
+        return metadata;
+      }
+      throw new Error('cannot find application');
+    } else {
+      return json;
+    }
   },
 
-  async setEcosystem(name, data) {
-    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
-    fs.writeFileSync(ecosystemPath, JSON.stringify(data, null, 2));
+  async setMetadata(data, name) {
+    if (name) {
+      const json = await this.getMetadata();
+      json[name] = data;
+      const metadataPath = path.join(dirs.kolony, 'metadata.json');
+      fs.writeFileSync(metadataPath, JSON.stringify(json, null, 2));
+    } else {
+      const metadataPath = path.join(dirs.kolony, 'metadata.json');
+      fs.writeFileSync(metadataPath, JSON.stringify(data, null, 2));
+    }
   },
 };

@@ -4,7 +4,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const dirs = require('../utils/dirs');
-const { logBase, logChild } = require('../utils/logger.js');
+const { logBase, logChild, logError } = require('../utils/logger.js');
 const config = require('../utils/config');
 
 const nginxPaths = [
@@ -19,16 +19,10 @@ const add = async (args) => {
   const domain = args.domain;
 
   logBase('looking for application');
-  const ecosystem = await config.getEcosystem(name);
-  if (!ecosystem) {
-    throw new Error(`couldnt find ecosystem ${name}`);
-  }
-  const app = ecosystem.apps[0];
-  const splitName = app.name.split('-');
-  splitName.pop();
-  const appName = splitName.join('-');
+  const app = await config.getMetadata(name);
+  const json = await config.getMetadata();
   const port = app.port;
-  logChild(`found ${appName}`);
+  logChild(`found ${app.name}`);
 
   console.log();
   if (port) {
@@ -38,22 +32,28 @@ const add = async (args) => {
   }
 
   logBase('checking to see if domain is already in use');
-  const existingDomains = fs.readdirSync(dirs.sitesEnabled);
-  if (existingDomains.includes(domain)) {
-    throw new Error('domain is already being used');
-  } else {
-    logChild('domain is not in use');
-  }
+  Object.keys(json).forEach((key) => {
+    const domains = json[key].domains || [];
+    domains.forEach((row) => {
+      if (row.domain === domain) {
+        throw new Error('domain is already being used');
+      }
+    });
+  });
+
+  logChild('domain is not in use');
 
   logBase(`adding ${domain} to nginx`);
-  await kopy(path.join(blueprintsDir, './sites-enabled'), dirs.sitesEnabled, {
+  const appDir = path.join(dirs.kolony, name);
+  const metadataDir = path.join(appDir, './metadata');
+  await kopy(path.join(blueprintsDir, './sites-enabled'), metadataDir, {
     data: {
       domain,
       port,
     },
   });
 
-  fs.renameSync(path.join(dirs.sitesEnabled, './sites-enabled'), path.join(dirs.sitesEnabled, domain));
+  fs.renameSync(path.join(metadataDir, './sites-enabled'), path.join(metadataDir, domain));
 
   logChild('generated nginx config file');
 
@@ -66,7 +66,7 @@ const add = async (args) => {
     return false;
   });
 
-  fs.symlinkSync(path.join(dirs.sitesEnabled, domain), path.join(nginxPath, domain));
+  fs.symlinkSync(path.join(metadataDir, domain), path.join(nginxPath, domain));
 
   logChild('linked to nginx');
 
@@ -75,8 +75,7 @@ const add = async (args) => {
   app.domains.push({
     domain,
   });
-  ecosystem.apps = [app];
-  await config.setEcosystem(name, ecosystem);
+  await config.setMetadata(app, name);
 
   logBase('reloading nginx');
   execSync('nginx -s reload');
@@ -98,7 +97,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   add(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

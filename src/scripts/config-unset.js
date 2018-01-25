@@ -1,6 +1,7 @@
 const path = require('path');
+const fs = require('fs');
 
-const { logBase, logChild } = require('../utils/logger');
+const { logBase, logChild, logError } = require('../utils/logger');
 const run = require('../utils/run');
 const config = require('../utils/config');
 const dirs = require('../utils/dirs');
@@ -9,11 +10,7 @@ const unset = async (args) => {
   const name = args.name;
   logBase('looking for application');
 
-  const ecosystem = await config.getEcosystem(name);
-  if (!ecosystem) {
-    throw new Error('unable to find ecosystem');
-  }
-  const app = ecosystem.apps[0];
+  const app = await config.getMetadata(name);
   logChild(`found application ${name}`);
 
   logBase('processing environment variables');
@@ -36,13 +33,31 @@ const unset = async (args) => {
   });
 
   app.env = env;
-  ecosystem.apps = [app];
-  await config.setEcosystem(name, ecosystem);
+  await config.setMetadata(app, name);
   logChild('removed environment variables');
 
   if (app.cwd) {
     logBase('restarting application');
-    const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
+
+    const appDir = path.join(dirs.kolony, name);
+    const metadataDir = path.join(appDir, './metadata');
+    const ecosystemPath = path.join(metadataDir, './ecosystem.json');
+    let ecosystem;
+    try {
+      ecosystem = require(ecosystemPath);
+      ecosystem = ecosystem.apps[0];
+    } catch (err) {
+      throw new Error('unable to load ecosystem file');
+    }
+    ecosystem.env = app.env;
+
+    const ecosystemWrite = {
+      apps: [
+        ecosystem,
+      ],
+    };
+
+    fs.writeFileSync(ecosystemPath, JSON.stringify(ecosystemWrite, null, 2));
     run(`pm2 reload ${ecosystemPath} --update-env`);
     logChild('app restarted successfully');
   }
@@ -68,7 +83,7 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   unset(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
     process.exit(1);
   });
 };

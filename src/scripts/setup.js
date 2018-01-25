@@ -1,48 +1,40 @@
-const { execSync } = require('child_process');
+const shell = require('shelljs');
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
-const { logBase, logChild } = require('../utils/logger.js');
+const config = require('../utils/config');
+const run = require('../utils/run');
+const { logBase, logChild, logError } = require('../utils/logger');
+
+const checkCommand = async (command) => {
+  logBase(`checking to see if ${command} is installed`);
+  if (!shell.which(command)) {
+    throw new Error(`${command} is not installed`);
+  }
+  logChild(`${command} is installed`);
+};
 
 const setup = async () => {
-  logBase('checking to see if git is installed');
-  try {
-    execSync('git --version', { stdio: 'ignore' });
-    logChild('git is installed');
-  } catch (_) {
-    logChild('Error: git is not installed');
-  }
-
-  logBase('checking to see if nginx is installed');
-  try {
-    execSync('nginx -v', { stdio: 'ignore' });
-    logChild('nginx is installed');
-  } catch (_) {
-    logChild('Error: nginx is not installed');
-  }
+  await checkCommand('git');
 
   logBase('checking to see if nvm is installed');
   try {
-    execSync('. "$NVM_DIR/nvm.sh" && nvm --version', { stdio: 'ignore' });
+    await run('. "$NVM_DIR/nvm.sh" && nvm --version');
     logChild('nvm is installed');
-  } catch (_) {
-    logChild('Error: nvm is not installed');
+  } catch (err) {
+    throw new Error('nvm is not installed');
   }
+  logChild('set the default node version to the current version');
+  await run('nvm alias default $(node -v)');
 
-  logBase('checking to see if pm2 is installed');
-  try {
-    execSync('pm2 --version', { stdio: 'ignore' });
-    logChild('pm2 is installed');
-  } catch (_) {
-    logChild('Error: pm2 is not installed');
-  }
+  await checkCommand('node');
+
+  await checkCommand('pm2');
+
+  await checkCommand('nginx');
 
   const homeDir = os.homedir();
   const kolonyDir = path.join(homeDir, './.kolony');
-  const buildsDir = path.join(kolonyDir, './builds');
-  const gitDir = path.join(kolonyDir, './git');
-  const sitesEnabledDir = path.join(kolonyDir, './sites-enabled');
-  const ecosystemsDir = path.join(kolonyDir, './ecosystems');
 
   logBase('looking for kolony dir');
   if (!fs.existsSync(kolonyDir)) {
@@ -52,39 +44,12 @@ const setup = async () => {
     logChild('found folder');
   }
 
-  logBase('looking for git dir');
-  if (!fs.existsSync(gitDir)) {
-    fs.mkdirSync(gitDir);
-    logChild('created folder');
-  } else {
-    logChild('found folder');
-  }
+  logBase('creating metadata file');
+  const metadata = {};
+  await config.setMetadata(metadata);
+  logChild('created metadata file');
 
-  logBase('looking for builds dir');
-  if (!fs.existsSync(buildsDir)) {
-    fs.mkdirSync(buildsDir);
-    logChild('created folder');
-  } else {
-    logChild('found folder');
-  }
-
-  logBase('looking for domains dir');
-  if (!fs.existsSync(sitesEnabledDir)) {
-    fs.mkdirSync(sitesEnabledDir);
-    logChild('created folder');
-  } else {
-    logChild('found folder');
-  }
-
-  logBase('looking for ecosystems dir');
-  if (!fs.existsSync(ecosystemsDir)) {
-    fs.mkdirSync(ecosystemsDir);
-    logChild('created folder');
-  } else {
-    logChild('found folder');
-  }
-
-  logBase('if you haven\'t already, run `pm2 startup` to restart your processes on reboot');
+  logBase('IF YOU HAVEN\'T ALREADY, RUN `pm2 startup` TO RESTART YOUR PROCESSES ON REBOOT');
 
   console.log();
 };
@@ -94,7 +59,8 @@ module.exports.desc = 'setup kolony';
 
 module.exports.handler = (args) => {
   setup(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
+    console.log();
     process.exit(1);
   });
 };

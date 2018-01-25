@@ -1,12 +1,12 @@
 const path = require('path');
 const bs58 = require('bs58');
 const crypto = require('crypto');
-const ncp = require('ncp').ncp;
 const rimraf = require('rimraf');
+const fs = require('fs');
 
 const check = require('../utils/check');
 const dirs = require('../utils/dirs');
-const { logBase, logChild } = require('../utils/logger.js');
+const { logBase, logChild, logError } = require('../utils/logger.js');
 const config = require('../utils/config');
 const ports = require('../utils/ports');
 const run = require('../utils/run');
@@ -21,68 +21,39 @@ const rmDir = dirPath => new Promise((resolve, reject) => {
   });
 });
 
-const copyDir = (source, destination) => new Promise((resolve, reject) => {
-  ncp(source, destination, (err) => {
-    if (err) {
-      reject(err);
-    } else {
-      resolve();
-    }
-  });
-});
-
 const build = async (args) => {
   check.setup();
 
   const name = args.name;
-  const gitDir = path.join(dirs.git, name);
-  const ecosystemPath = path.join(dirs.ecosystems, `${name}.json`);
-
-  let ecosystem;
-  let app;
-  try {
-    ecosystem = await config.getEcosystem(name);
-    app = ecosystem.apps[0];
-  } catch (_) {
-    ecosystem = {};
-    app = {};
+  const appDir = path.join(dirs.kolony, name);
+  const app = await config.getMetadata(name);
+  if (!app) {
+    throw new Error('cannot find application');
+  } else {
+    logChild('found application');
   }
-
-  let oldID;
-  if (app.cwd) {
-    const splitPath = app.cwd.split('/');
-    const oldAppName = splitPath[splitPath.length - 1];
-    const oldAppNameSplit = oldAppName.split('-');
-    oldID = oldAppNameSplit[oldAppNameSplit.length - 1];
-  }
+  const oldID = app.id || '';
   const newID = bs58.encode(crypto.randomBytes(4));
+  app.id = newID;
+
+  const buildsDir = path.join(appDir, './builds');
+  const gitDir = path.join(appDir, './git');
+
+  process.chdir(buildsDir);
+
   logBase(`building application ${newID}`);
-
-  process.chdir(dirs.builds);
   process.env.GIT_DIR = '.git';
-
   logBase('cloning application');
-  run(`git clone ${gitDir} ${name}-${newID}`);
+  await run(`git clone ${gitDir} ${name}-${newID}`);
+  logChild('application cloned');
 
-  const buildDir = path.join(dirs.builds, `${name}-${newID}`);
+  const buildDir = path.join(buildsDir, `${name}-${newID}`);
   app.cwd = buildDir;
-  app.name = `${name}-${newID}`;
+  app.name = `${name}`;
   process.chdir(buildDir);
 
-  logBase('looking for existing build');
-  if (oldID) {
-    logChild(`found existing build id ${oldID}`);
-    logChild('copying node_modules from old build');
-    await copyDir(path.join(dirs.builds, `./${name}-${oldID}`, './node_modules'), path.join(buildDir, './node_modules'));
-  } else {
-    logChild('couldnt not find existing build');
-  }
-
-  console.log();
-
-  let port;
-  if (app.port) {
-    port = app.port;
+  let port = app.port;
+  if (port) {
     logChild(`found existing port ${port}`);
   } else {
     logChild('could not find existing port');
@@ -94,100 +65,122 @@ const build = async (args) => {
       }
     }
     app.port = port;
+    const env = app.env || {};
+    env.PORT = port;
+    app.env = env;
     logChild(`generated new port ${port}`);
   }
 
-  logBase('looking for package.json');
-  let packageJSON;
+  logBase('setting up strategy');
+  const metadataDir = path.join(appDir, './metadata');
+  const strategyGit = app.strategy || 'https://github.com/konstructorjs/kolony-konstructor-strategy.git';
+  const strategyName = path.basename(strategyGit).replace(/\.[^/.]+$/, '');
+  const strategyDir = path.join(metadataDir, strategyName);
+  if (fs.existsSync(strategyDir)) {
+    process.chdir(strategyDir);
+    await run('git pull origin master');
+    logChild('updated strategy');
+  } else {
+    await run(`git clone ${strategyGit} ${strategyDir}`);
+    process.chdir(strategyDir);
+    logChild('downloaded strategy');
+  }
+  await run('npm install');
+  logChild('installed strategy dependencies');
+  process.chdir(buildDir);
+  let strategy;
   try {
-    packageJSON = require(path.join(buildDir, './package.json'));
+    strategy = require(path.join(strategyDir, 'index.js'));
   } catch (err) {
-    throw new Error('\t unable to find package.json');
+    throw new Error('unable to import strategy');
   }
-  logChild('found package.json');
+  const scripts = strategy.scripts;
+  const start = async (input) => {
+    logBase('starting server');
 
-  logBase('looking for node and npm versions');
-  let nodeVersion = 'stable';
-  let npmVersion;
-
-  if (packageJSON.engines) {
-    nodeVersion = packageJSON.engines.node || 'stable';
-    npmVersion = packageJSON.engines.npm;
-  }
-
-  logChild(`installing node ${nodeVersion}`);
-  run(`nvm install ${nodeVersion}`);
-
-  if (npmVersion) {
-    logChild(`installing npm ${npmVersion}`);
-    run(`nvm exec ${nodeVersion} npm install -g npm@${npmVersion}`);
-  }
-
-  logBase('configuring environment variables');
-  const env = app.env || {};
-  env.PORT = port;
-  env.NODE_ENV = env.NODE_ENV || 'production';
-  env.NPM_CONFIG_LOGLEVEL = env.NPM_CONFIG_LOGLEVEL || 'error';
-  env.NPM_CONFIG_PRODUCTION = env.NPM_CONFIG_PRODUCTION || 'false';
-  env.NODE_VERBOSE = env.NODE_VERBOSE || 'false';
-  Object.keys(env).forEach((key) => {
-    const value = env[key];
-    process.env[key] = value;
-  });
-
-  app.env = env;
-  ecosystem.apps = [app];
-  await config.setEcosystem(name, ecosystem);
-
-  const stages = packageJSON.kolony || {};
-
-  const runScript = (scriptName, command) => {
-    logBase(`running ${scriptName} script`);
-    if (command) {
-      run(`nvm exec --silent ${nodeVersion} ${command} | sed 's/^/\t/'`, { show: true });
-    } else {
-      logChild(`no ${scriptName} script defined`);
+    const script = input.script || '';
+    if (!script) {
+      throw new Error('no script defined');
     }
+    const pm2Args = input.args;
+
+    const ecosystemPath = path.join(metadataDir, './ecosystem.json');
+    let ecosystem;
+    try {
+      ecosystem = require(ecosystemPath);
+    } catch (err) {
+      throw new Error('unable to load ecosystem file, try recreating the application');
+    }
+    ecosystem = ecosystem.apps[0];
+    ecosystem.interpreter = input.interpreter || '';
+    ecosystem.name = `${app.name}-${newID}`;
+    ecosystem.script = script;
+    ecosystem.args = pm2Args;
+    ecosystem.env = app.env;
+
+    const ecosystemWrite = {
+      apps: [
+        ecosystem,
+      ],
+    };
+
+    fs.writeFileSync(ecosystemPath, JSON.stringify(ecosystemWrite, null, 2));
+
+    logChild('created pm2 config');
+
+    await run(`pm2 start ${ecosystemPath}`);
+    logChild(`started server on port ${app.port}`);
   };
 
-  const preInstallScript = stages['pre-install'];
-  runScript('pre-install', preInstallScript);
+  let ctx = {
+    app,
+    logBase,
+    logChild,
+    logError,
+    dirs: {
+      buildDir,
+      appDir,
+    },
+    run,
+    start,
+    state: {
+      oldID,
+      name,
+    },
+  };
 
-  const installScript = stages.install || 'npm install';
-  runScript('install', installScript);
+  for (let i = 0; i < scripts.length; i += 1) {
+    console.log();
+    console.log(`--- ${scripts[i].description} ---`);
+    const script = require(path.join(strategyDir, './lib', scripts[i].script));
+    ctx = await script(ctx); // eslint-disable-line
+  }
 
-  const postInstallScript = stages['post-install'];
-  runScript('post-install', postInstallScript);
-
-  const preBuildScript = stages['pre-build'];
-  runScript('pre-build', preBuildScript);
-
-  const buildScript = stages.build || 'npm run build';
-  runScript('build', buildScript);
-
-  const postBuildScript = stages['post-build'];
-  runScript('post-build', postBuildScript);
-
-  logBase('starting server');
-  run(`pm2 start --interpreter=$(. "$NVM_DIR/nvm.sh" && nvm which ${nodeVersion}) --name ${name}-${newID} ${ecosystemPath}`);
-  logChild(`started server on port ${port}`);
+  console.log();
+  console.log('--- adding finishing touches ---');
 
   logBase('saving process in pm2');
-  run('pm2 save');
+  await run('pm2 save');
   logChild('process is saved');
+
+  logBase('saving changes');
+  await config.setMetadata(app, name);
+  logChild('changes saved');
 
   if (oldID) {
     logBase('deleting old project instance');
     try {
-      run(`pm2 stop ${name}-${oldID}`);
-      run(`pm2 delete ${name}-${oldID}`);
-      await rmDir(path.join(dirs.builds, `./${name}-${oldID}`));
-    } catch (_) {
-      logChild('there was a problem shutting down your older server. please do it manually');
+      await run(`pm2 stop ${name}-${oldID}`);
+      await run(`pm2 delete ${name}-${oldID}`);
+      await rmDir(path.join(buildsDir, `./${name}-${oldID}`));
+      logChild('deleted old project data');
+    } catch (err) {
+      logChild('there was a problem shutting down/deleting your olde application. please do it manually');
     }
   }
 
-  logBase('application successfully deployed');
+  console.log();
+  console.log('*** application successfully deployed ***');
   console.log();
 };
 
@@ -201,7 +194,8 @@ module.exports.builder = {
 
 module.exports.handler = (args) => {
   build(args).catch((err) => {
-    console.log(`${err}`);
+    logError(`${err}`);
+    console.log();
     process.exit(1);
   });
 };
