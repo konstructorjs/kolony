@@ -1,6 +1,6 @@
 <p align="center"><a href="https://konstructor.js.org" target="_blank"><img width="100"src="https://konstructor.js.org/assets/static/images/konstructor.png"></a></p>
 <p align="center">
-  <a href="https://circleci.com/gh/konstructorjs/kolony"><img src="https://img.shields.io/circleci/project/konstructorjs/kolony.svg" alt="Build Status"></a>
+  <a href="https://travis-ci.org/konstructorjs/kolony"><img src="https://img.shields.io/travis/konstructorjs/kolony.svg" alt="Build Status"></a>
   <a href="https://www.npmjs.com/package/kolony"><img src="https://img.shields.io/npm/dm/kolony.svg" alt="Downloads"></a>
   <a href="https://www.npmjs.com/package/kolony"><img src="https://img.shields.io/npm/v/kolony.svg" alt="Version"></a>
   <a href="https://www.npmjs.com/package/kolony"><img src="https://img.shields.io/npm/l/kolony.svg" alt="License"></a>
