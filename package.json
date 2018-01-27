@@ -9,7 +9,8 @@
     "compile": "babel --out-dir lib/ --copy-files src/",
     "test": "npm run lint",
     "lint": "eslint *.js src/.",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "travis-deploy-once": "travis-deploy-once"
   },
   "repository": {
     "type": "git",
@@ -27,11 +28,11 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1",
-    "condition-circle": "^2.0.1",
     "eslint": "^4.16.0",
     "eslint-config-airbnb-base": "^11.3.2",
     "eslint-plugin-import": "^2.8.0",
-    "semantic-release": "^12.2.4"
+    "semantic-release": "^12.2.5",
+    "travis-deploy-once": "^4.3.3"
   },
   "dependencies": {
     "bs58": "^4.0.1",
@@ -46,10 +47,7 @@
     "kolony": "lib/index.js"
   },
   "engines": {
-    "node": ">=6.0.0",
-    "npm": ">=4.0.0"
-  },
-  "release": {
-    "verifyConditions": "condition-circle"
+    "node": ">=6",
+    "npm": ">=4"
   }
 }
